@@ -210,10 +210,13 @@ Camadas internas não importam camadas externas. `services/` não conhece Expres
 backend/
   src/
     app.js
+    config.js          (variáveis de ambiente)
+    errors.js          (AppError e NotFoundError)
     routes/
     controllers/
     services/
     repositories/
+    middlewares/       (X-User-Id e tratamento de erros)
   storage/
   test/
 frontend/
