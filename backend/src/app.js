@@ -11,9 +11,29 @@
 // usando multer com diskStorage. Não utilize provedores externos.
 
 const express = require('express');
+const { randomUUID } = require('node:crypto');
 const config = require('./config');
-const documentsRouter = require('./routes/documents.routes');
+const documentsRepository = require('./repositories/documents.repository');
+const filesRepository = require('./repositories/files.repository');
+const { createDocumentsService } = require('./services/documents.service');
+const { createDocumentsController } = require('./controllers/documents.controller');
+const { createDocumentsRouter } = require('./routes/documents.routes');
+const { createUploadFileMiddleware } = require('./middlewares/upload-file.middleware');
+const { requireUserId } = require('./middlewares/user-id.middleware');
 const { errorHandler } = require('./middlewares/error.middleware');
+
+const documentsService = createDocumentsService({
+  documentsRepository,
+  filesRepository,
+  createId: randomUUID,
+  now: () => new Date(),
+});
+const documentsController = createDocumentsController(documentsService);
+const documentsRouter = createDocumentsRouter({
+  documentsController,
+  uploadFile: createUploadFileMiddleware(filesRepository, config.maxUploadSizeBytes),
+  requireUserId,
+});
 
 const app = express();
 
