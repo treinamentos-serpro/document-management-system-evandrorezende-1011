@@ -3,18 +3,6 @@ const documentsRepository = require('../repositories/documents.repository');
 const filesRepository = require('../repositories/files.repository');
 const { NotFoundError } = require('../errors');
 
-// Campos internos (como storedName) não são expostos pela API.
-function toPublicDocument(document) {
-  return {
-    id: document.id,
-    originalName: document.originalName,
-    size: document.size,
-    mimeType: document.mimeType,
-    uploadedAt: document.uploadedAt,
-    owner: document.owner,
-  };
-}
-
 async function uploadDocument(owner, uploadedFile) {
   const document = {
     id: randomUUID(),
@@ -33,14 +21,13 @@ async function uploadDocument(owner, uploadedFile) {
     throw error;
   }
 
-  return toPublicDocument(document);
+  return document;
 }
 
 function listDocuments(owner) {
   return documentsRepository
     .findByOwner(owner)
-    .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt))
-    .map(toPublicDocument);
+    .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
 }
 
 function getDocumentForDownload(owner, id) {
@@ -52,7 +39,7 @@ function getDocumentForDownload(owner, id) {
   }
 
   return {
-    document: toPublicDocument(document),
+    document,
     filePath: filesRepository.resolvePath(document.storedName),
   };
 }

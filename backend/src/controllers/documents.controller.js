@@ -5,6 +5,17 @@ const { AppError } = require('../errors');
 
 const DEFAULT_MIME_TYPE = 'application/octet-stream';
 
+function toPublicDocument(document) {
+  return {
+    id: document.id,
+    originalName: document.originalName,
+    size: document.size,
+    mimeType: document.mimeType,
+    uploadedAt: document.uploadedAt,
+    owner: document.owner,
+  };
+}
+
 // Codifica o nome conforme RFC 5987, inclusive os caracteres que encodeURIComponent deixa passar.
 function encodeFilename(name) {
   return encodeURIComponent(name).replace(
@@ -25,20 +36,21 @@ async function upload(req, res) {
 
   const uploadedFile = { ...req.file, originalname: decodeOriginalName(req.file.originalname) };
   const document = await documentsService.uploadDocument(req.userId, uploadedFile);
-  res.status(201).json(document);
+  res.status(201).json(toPublicDocument(document));
 }
 
 function list(req, res) {
-  res.json(documentsService.listDocuments(req.userId));
+  res.json(documentsService.listDocuments(req.userId).map(toPublicDocument));
 }
 
 function download(req, res) {
   const { document, filePath } = documentsService.getDocumentForDownload(req.userId, req.params.id);
+  const publicDocument = toPublicDocument(document);
 
   res.set({
-    'Content-Type': document.mimeType || DEFAULT_MIME_TYPE,
-    'Content-Length': document.size,
-    'Content-Disposition': `attachment; filename*=UTF-8''${encodeFilename(document.originalName)}`,
+    'Content-Type': publicDocument.mimeType || DEFAULT_MIME_TYPE,
+    'Content-Length': publicDocument.size,
+    'Content-Disposition': `attachment; filename*=UTF-8''${encodeFilename(publicDocument.originalName)}`,
   });
 
   pipeline(fs.createReadStream(filePath), res, (error) => {
